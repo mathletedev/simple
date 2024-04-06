@@ -1,4 +1,4 @@
-use crate::{config::INSTRUCTIONS_RADIX, types::error::MyError};
+use crate::{config::INSTRUCTIONS_RADIX, types::MyError};
 use std::{i16, io};
 
 pub fn read_instruction() -> Result<i16, MyError> {

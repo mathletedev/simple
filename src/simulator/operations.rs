@@ -2,7 +2,7 @@ use super::{
 	simpletron::{Simpletron, State},
 	utils::{read_decimal, read_string},
 };
-use crate::types::error::MyError;
+use crate::types::MyError;
 use lazy_static::lazy_static;
 use std::collections::HashMap;
 

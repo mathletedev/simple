@@ -4,7 +4,7 @@ use super::{
 };
 use crate::{
 	config::{INSTRUCTIONS_RADIX, MEMORY},
-	types::error::MyError,
+	types::MyError,
 };
 use std::{
 	fs::File,
