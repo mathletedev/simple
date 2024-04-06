@@ -2,7 +2,10 @@ use super::{
 	operations::OPERATION_TABLE,
 	utils::{read_instruction, sign},
 };
-use crate::{config::INSTRUCTIONS_RADIX, types::error::MyError};
+use crate::{
+	config::{INSTRUCTIONS_RADIX, MEMORY},
+	types::error::MyError,
+};
 use std::{
 	fs::File,
 	i16,
@@ -11,9 +14,9 @@ use std::{
 
 #[derive(PartialEq, Eq)]
 pub enum State {
-	RUNNING,
-	HALTED,
-	CRASHED,
+	Running,
+	Halted,
+	Crashed,
 }
 
 pub struct Simpletron {
@@ -33,13 +36,13 @@ impl Simpletron {
 		println!();
 
 		Simpletron {
-			state: State::HALTED,
+			state: State::Halted,
 			accumulator: 0,
 			instruction_counter: 0,
 			instruction_register: 0,
 			operation_code: 0,
 			operand: 0,
-			memory: vec![0; 1000],
+			memory: vec![0; MEMORY as usize],
 			debug: false,
 		}
 	}
@@ -107,9 +110,9 @@ impl Simpletron {
 		println!("*** Program execution begins ***");
 		println!();
 
-		self.state = State::RUNNING;
+		self.state = State::Running;
 
-		while self.state == State::RUNNING {
+		while self.state == State::Running {
 			match self.step() {
 				Ok(()) => {}
 				Err(error) => {
@@ -140,13 +143,13 @@ impl Simpletron {
 				Ok(()) => {}
 				// error handling
 				Err(error) => {
-					self.state = State::CRASHED;
+					self.state = State::Crashed;
 					return Err(error);
 				}
 			},
 			None => {
 				println!("Invalid operation");
-				self.state = State::HALTED;
+				self.state = State::Halted;
 			}
 		}
 

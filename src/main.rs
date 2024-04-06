@@ -1,8 +1,9 @@
+pub mod compiler;
 pub mod config;
-pub mod runner;
+pub mod simulator;
 pub mod types;
 
-use runner::simpletron::Simpletron;
+use simulator::simpletron::Simpletron;
 
 // TODO: implement floating-point numbers
 

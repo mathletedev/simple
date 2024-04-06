@@ -20,6 +20,7 @@ const READ: Operation = |simpletron| {
 };
 
 const WRITE: Operation = |simpletron| {
+	// TODO: output to disk
 	println!("{}", simpletron.memory[simpletron.operand as usize]);
 
 	Ok(())
@@ -142,7 +143,7 @@ const BRANCH_ZERO: Operation = |simpletron| {
 const HALT: Operation = |simpletron| {
 	println!();
 	println!("*** Simpletron execution terminated ***");
-	simpletron.state = State::HALTED;
+	simpletron.state = State::Halted;
 
 	Ok(())
 };
