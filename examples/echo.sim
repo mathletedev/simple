@@ -1,0 +1,4 @@
+00 REM prints the input data
+10 INPUT X
+20 PRINT X
+99 END

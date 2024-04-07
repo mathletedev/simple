@@ -34,11 +34,11 @@ const READ_STR: Operation = |simpletron| {
 
 	// first address = length of string
 	let ptr = simpletron.operand as usize;
-	simpletron.memory[ptr] = data.len() as i16;
+	simpletron.memory[ptr] = data.len() as i32;
 
 	// assign each character to memory
 	for (i, char) in data.chars().enumerate() {
-		simpletron.memory[ptr + i + 1] = char as i16;
+		simpletron.memory[ptr + i + 1] = char as i32;
 	}
 
 	Ok(())
@@ -119,14 +119,14 @@ const EXPONENTIATE: Operation = |simpletron| {
 
 const BRANCH: Operation = |simpletron| {
 	// go to one instruction before because it will be incremented
-	simpletron.instruction_counter = simpletron.operand as u16 - 1;
+	simpletron.instruction_counter = simpletron.operand as u32 - 1;
 
 	Ok(())
 };
 
 const BRANCH_NEG: Operation = |simpletron| {
 	if simpletron.accumulator < 0 {
-		simpletron.instruction_counter = simpletron.operand as u16 - 1;
+		simpletron.instruction_counter = simpletron.operand as u32 - 1;
 	}
 
 	Ok(())
@@ -134,7 +134,7 @@ const BRANCH_NEG: Operation = |simpletron| {
 
 const BRANCH_ZERO: Operation = |simpletron| {
 	if simpletron.accumulator == 0 {
-		simpletron.instruction_counter = simpletron.operand as u16 - 1;
+		simpletron.instruction_counter = simpletron.operand as u32 - 1;
 	}
 
 	Ok(())
@@ -156,7 +156,7 @@ const SML_DEBUG: Operation = |simpletron| {
 
 // collect all operations into a single table for easy lookup
 lazy_static! {
-	pub static ref OPERATION_TABLE: HashMap<u8, Operation> = HashMap::from([
+	pub static ref OPERATION_TABLE: HashMap<u32, Operation> = HashMap::from([
 		(0x10, READ),
 		(0x11, WRITE),
 		(0x12, READ_STR),

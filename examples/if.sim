@@ -1,0 +1,6 @@
+00 REM prints 1234 if X is not equal to Y
+10 INPUT X
+20 INPUT Y
+30 IF X == Y GOTO 90
+40 PRINT 1234
+90 END

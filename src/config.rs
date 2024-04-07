@@ -1,2 +1,5 @@
-pub const MEMORY: u32 = 1000;
+pub const MEMORY: u32 = 10000;
 pub const INSTRUCTIONS_RADIX: u32 = 16;
+// number separating operation from operand
+pub const INSTRUCTIONS_SEP: u32 =
+	INSTRUCTIONS_RADIX * INSTRUCTIONS_RADIX * INSTRUCTIONS_RADIX * INSTRUCTIONS_RADIX;
