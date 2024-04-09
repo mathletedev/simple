@@ -1,7 +1,4 @@
-use super::{
-	operations::OPERATION_TABLE,
-	utils::{read_instruction, sign},
-};
+use super::operations::OPERATION_TABLE;
 use crate::{
 	config::{INSTRUCTIONS_RADIX, INSTRUCTIONS_SEP, MEMORY},
 	types::MyError,
@@ -20,14 +17,14 @@ pub enum State {
 }
 
 pub struct Simpletron {
-	pub state: State,
-	pub accumulator: i32,
-	pub instruction_counter: u32,
+	state: State,
+	pub(super) accumulator: i32,
+	instruction_counter: u32,
 	instruction_register: i32,
 	operation_code: u32,
-	pub operand: u32,
-	pub memory: Vec<i32>,
-	pub debug: bool,
+	pub(super) operand: u32,
+	pub(super) memory: Vec<i32>,
+	debug: bool,
 }
 
 impl Simpletron {
@@ -45,6 +42,18 @@ impl Simpletron {
 			memory: vec![0; MEMORY as usize],
 			debug: false,
 		}
+	}
+
+	pub fn set_state(&mut self, state: State) {
+		self.state = state;
+	}
+
+	pub fn set_instruction_counter(&mut self, instruction_counter: u32) {
+		self.instruction_counter = instruction_counter;
+	}
+
+	pub fn set_debug(&mut self, debug: bool) {
+		self.debug = debug;
 	}
 
 	// load program from file
@@ -84,7 +93,7 @@ impl Simpletron {
 			print!("{i:0>2} ? ");
 			io::stdout().flush().unwrap();
 
-			let data = match read_instruction() {
+			let data = match self.read_instruction() {
 				Ok(data) => data,
 				Err(_) => {
 					println!("*** Invalid token ***");
@@ -146,7 +155,7 @@ impl Simpletron {
 				}
 			},
 			None => {
-				println!("Invalid operation");
+				println!("Invalid operation {:x}", self.operation_code);
 				self.state = State::Halted;
 			}
 		}
@@ -165,13 +174,13 @@ impl Simpletron {
 		println!("REGISTERS:");
 		println!(
 			"accumulator\t\t{}{:0>4x}",
-			sign(self.accumulator),
+			self.sign(self.accumulator),
 			self.accumulator
 		);
 		println!("instruction_counter\t   {:0>2x}", self.instruction_counter);
 		println!(
 			"instruction_register\t{}{:0>4x}",
-			sign(self.instruction_register),
+			self.sign(self.instruction_register),
 			self.instruction_register
 		);
 		println!("operation_code\t\t   {:0>2x}", self.instruction_counter);
@@ -189,9 +198,44 @@ impl Simpletron {
 
 			for j in 0..10 {
 				let data = self.memory[i * 10 + j];
-				print!(" {}{:0>4x}", sign(data), data)
+				print!(" {}{:0>4x}", self.sign(data), data)
 			}
 			println!();
+		}
+	}
+
+	pub fn read_instruction(&self) -> Result<i32, MyError> {
+		let mut data = String::new();
+		if io::stdin().read_line(&mut data).is_err() {
+			Err(MyError::new("Failed to read line"))
+		} else {
+			Ok(i32::from_str_radix(data.trim(), INSTRUCTIONS_RADIX).expect("Invalid input"))
+		}
+	}
+
+	pub fn read_decimal(&self) -> Result<i32, MyError> {
+		let mut data = String::new();
+		if io::stdin().read_line(&mut data).is_err() {
+			Err(MyError::new("Failed to read line"))
+		} else {
+			Ok(i32::from_str_radix(data.trim(), 10).expect("Invalid input"))
+		}
+	}
+
+	pub fn read_string(&self) -> Result<String, MyError> {
+		let mut data = String::new();
+		if io::stdin().read_line(&mut data).is_err() {
+			Err(MyError::new("Failed to read line"))
+		} else {
+			Ok(data)
+		}
+	}
+
+	pub fn sign(&self, x: i32) -> char {
+		if x < 0 {
+			'-'
+		} else {
+			'+'
 		}
 	}
 }

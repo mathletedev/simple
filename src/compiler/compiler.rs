@@ -8,14 +8,15 @@ use crate::{
 	types::MyError,
 };
 use std::{
+	collections::HashMap,
 	fs::{File, OpenOptions},
 	io::{prelude::*, BufReader, BufWriter},
 	path::PathBuf,
 };
 
 pub struct Compiler {
-	pub instruction_counter: u32,
-	pub data_counter: u32,
+	instruction_counter: u32,
+	data_counter: u32,
 	instructions: Vec<i32>,
 	symbol_table: SymbolTable,
 	flags: Vec<i32>,
@@ -51,7 +52,10 @@ impl Compiler {
 			let tokens: Vec<String> = line.unwrap().split(" ").map(|x| x.to_string()).collect();
 
 			if tokens.len() < 2 {
-				println!("*** Syntax error on line {i}: Incomplete statement ***");
+				println!(
+					"*** Syntax error on line {}: Incomplete statement ***",
+					i + 1
+				);
 				return;
 			}
 
@@ -59,7 +63,10 @@ impl Compiler {
 			let line_number: u32 = match tokens[0].parse() {
 				Ok(line_number) => line_number,
 				Err(_) => {
-					println!("*** Syntax error on line {i}: Invalid line number ***");
+					println!(
+						"*** Syntax error on line {}: Invalid line number ***",
+						i + 1
+					);
 					return;
 				}
 			};
@@ -69,7 +76,10 @@ impl Compiler {
 				.find(line_number as i32, TableEntryType::LineNumber)
 				.is_some()
 			{
-				println!("*** Syntax error on line {i}: Line number already used ***");
+				println!(
+					"*** Syntax error on line {}: Line number already used ***",
+					i + 1
+				);
 				return;
 			}
 
@@ -88,13 +98,14 @@ impl Compiler {
 				Some(command) => match command(self, &tokens[2..]) {
 					Ok(()) => {}
 					Err(error) => {
-						println!("*** Syntax error on line {i}: {} ***", error.details);
+						println!("*** Syntax error on line {}: {} ***", i + 1, error.details);
 						return;
 					}
 				},
 				None => {
 					println!(
-						"*** Syntax error on line {i}: Invalid symbol {} ***",
+						"*** Syntax error on line {}: Invalid symbol {} ***",
+						i + 1,
 						tokens[1]
 					);
 					return;
@@ -147,6 +158,12 @@ impl Compiler {
 		self.flags[self.instruction_counter as usize - 1] = symbol;
 	}
 
+	// returns current value of data counter and moves it up
+	pub fn use_data_counter(&mut self) -> u32 {
+		self.data_counter -= 1;
+		self.data_counter + 1
+	}
+
 	pub fn find_line_number(&self, symbol: i32) -> Option<TableEntry> {
 		self.symbol_table.find(symbol, TableEntryType::LineNumber)
 	}
@@ -180,6 +197,7 @@ impl Compiler {
 		let file = match OpenOptions::new()
 			.write(true)
 			.create(true)
+			.truncate(true)
 			.open(out_path.clone())
 		{
 			Ok(file) => file,
@@ -209,5 +227,79 @@ impl Compiler {
 				return Err(MyError::new("Failed to write to file"));
 			}
 		}
+	}
+
+	pub fn to_symbol(&self, token: String) -> Result<(i32, TableEntryType), MyError> {
+		// check if variableLET A = 10
+		// 30 PRINT A
+		if token.len() != 1 || !token.chars().nth(0).unwrap().is_alphabetic() {
+			// check if constant
+			match token.parse::<i32>() {
+				Ok(number) => Ok((number, TableEntryType::Constant)),
+				Err(_) => Err(MyError::new("Invalid symbol")),
+			}
+		} else {
+			Ok((
+				token.chars().nth(0).unwrap() as i32,
+				TableEntryType::Variable,
+			))
+		}
+	}
+
+	pub fn infix_to_postfix(&self, infix: Vec<String>) -> Result<Vec<String>, MyError> {
+		// infix to postfix: https://www.geeksforgeeks.org/convert-infix-expression-to-postfix-expression/
+		let mut postfix: Vec<String> = vec![];
+		let mut stack: Vec<String> = vec![];
+		for token in infix {
+			match self.to_symbol(token.clone()) {
+				Ok(_) => {
+					postfix.push(token);
+				}
+				Err(_) => match token.as_str() {
+					"(" => {
+						stack.push(token);
+					}
+					")" => loop {
+						let last = match stack.last() {
+							Some(last) => last,
+							None => {
+								return Err(MyError::new("Mismatched brackets"));
+							}
+						};
+						if last == "(" {
+							stack.pop();
+							break;
+						}
+
+						// pop all operators between brackets
+						postfix.push(stack.pop().unwrap());
+					},
+					"+" | "-" | "/" | "*" => {
+						// operator precedence table
+						let precedence: HashMap<&str, u8> =
+							HashMap::from([("(", 0), ("+", 1), ("-", 1), ("/", 2), ("*", 2)]);
+
+						// pop all operators with higher precedence
+						while !stack.is_empty()
+							&& precedence.get(stack.last().unwrap().as_str())
+								>= precedence.get(token.as_str())
+						{
+							postfix.push(stack.pop().unwrap());
+						}
+
+						stack.push(token);
+					}
+					_ => {
+						return Err(MyError::new(format!("Unexpected token {}", token).as_str()));
+					}
+				},
+			}
+		}
+
+		while !stack.is_empty() {
+			postfix.push(stack.pop().unwrap());
+		}
+
+		Ok(postfix)
 	}
 }

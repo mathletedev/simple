@@ -1,4 +1,4 @@
-use super::{compiler::Compiler, table_entry::TableEntryType, utils::to_symbol};
+use super::{compiler::Compiler, table_entry::TableEntryType};
 use crate::types::MyError;
 use lazy_static::lazy_static;
 use std::collections::HashMap;
@@ -12,7 +12,7 @@ const INPUT: Command = |compiler, args| {
 		return Err(MyError::new("INPUT command takes one argument"));
 	}
 
-	let symbol = match to_symbol(args[0].to_owned()) {
+	let symbol = match compiler.to_symbol(args[0].to_owned()) {
 		Ok(symbol) => symbol,
 		Err(error) => {
 			return Err(error);
@@ -35,7 +35,7 @@ const PRINT: Command = |compiler, args| {
 		return Err(MyError::new("PRINT command takes one argument"));
 	}
 
-	let symbol = match to_symbol(args[0].to_owned()) {
+	let symbol = match compiler.to_symbol(args[0].to_owned()) {
 		Ok(symbol) => symbol,
 		Err(error) => {
 			return Err(error);
@@ -54,19 +54,19 @@ const IF: Command = |compiler, args| {
 		return Err(MyError::new("IF...GOTO command takes 4 arguments"));
 	}
 
-	let symbol1 = match to_symbol(args[0].to_owned()) {
+	let symbol1 = match compiler.to_symbol(args[0].to_owned()) {
 		Ok(symbol) => symbol,
 		Err(error) => {
 			return Err(error);
 		}
 	};
-	let symbol2 = match to_symbol(args[2].to_owned()) {
+	let symbol2 = match compiler.to_symbol(args[2].to_owned()) {
 		Ok(symbol) => symbol,
 		Err(error) => {
 			return Err(error);
 		}
 	};
-	let symbol3 = match to_symbol(args[4].to_owned()) {
+	let symbol3 = match compiler.to_symbol(args[4].to_owned()) {
 		Ok(symbol) => symbol,
 		Err(error) => {
 			return Err(error);
@@ -82,7 +82,7 @@ const IF: Command = |compiler, args| {
 
 	let mut needs_flag = false;
 	let goto_pos = match compiler.find_line_number(symbol3.0) {
-		Some(goto_pos) => goto_pos.symbol,
+		Some(goto_pos) => goto_pos.location,
 		None => {
 			needs_flag = true;
 			0
@@ -93,9 +93,30 @@ const IF: Command = |compiler, args| {
 		"==" => {
 			compiler.add_instruction(0x20, table_entry1.location);
 			compiler.add_instruction(0x31, table_entry2.location);
-			compiler.add_instruction(0x42, goto_pos as u32);
+			compiler.add_instruction(0x42, goto_pos);
 		}
-		// TODO: other comparison operators
+		"<" => {
+			compiler.add_instruction(0x20, table_entry1.location);
+			compiler.add_instruction(0x31, table_entry2.location);
+			compiler.add_instruction(0x41, goto_pos);
+		}
+		">" => {
+			compiler.add_instruction(0x20, table_entry2.location);
+			compiler.add_instruction(0x31, table_entry1.location);
+			compiler.add_instruction(0x41, goto_pos);
+		}
+		"<=" => {
+			compiler.add_instruction(0x20, table_entry1.location);
+			compiler.add_instruction(0x31, table_entry2.location);
+			compiler.add_instruction(0x41, goto_pos);
+			compiler.add_instruction(0x42, goto_pos);
+		}
+		">=" => {
+			compiler.add_instruction(0x20, table_entry2.location);
+			compiler.add_instruction(0x31, table_entry1.location);
+			compiler.add_instruction(0x41, goto_pos);
+			compiler.add_instruction(0x42, goto_pos);
+		}
 		_ => {
 			return Err(MyError::new("Invalid comparison operator"));
 		}
@@ -106,6 +127,103 @@ const IF: Command = |compiler, args| {
 	if needs_flag {
 		compiler.add_flag(symbol3.0);
 	}
+
+	Ok(())
+};
+
+const GOTO: Command = |compiler, args| {
+	if args.len() != 1 {
+		return Err(MyError::new("GOTO command takes 1 argument"));
+	}
+
+	let symbol = match compiler.to_symbol(args[0].to_owned()) {
+		Ok(symbol) => symbol,
+		Err(error) => {
+			return Err(error);
+		}
+	};
+
+	if symbol.1 != TableEntryType::Constant {
+		return Err(MyError::new("Cannot GOTO a variable"));
+	}
+
+	let mut needs_flag = false;
+	let goto_pos = match compiler.find_line_number(symbol.0) {
+		Some(goto_pos) => goto_pos.location,
+		None => {
+			needs_flag = true;
+			0
+		}
+	};
+
+	compiler.add_instruction(0x40, goto_pos);
+
+	if needs_flag {
+		compiler.add_flag(symbol.0);
+	}
+
+	Ok(())
+};
+
+const LET: Command = |compiler, args| {
+	if args.len() < 3 {
+		return Err(MyError::new("Failed to parse LET command"));
+	}
+
+	// left-hand variable
+	let symbol = match compiler.to_symbol(args[0].to_owned()) {
+		Ok(symbol) => symbol,
+		Err(error) => {
+			return Err(error);
+		}
+	};
+
+	let table_entry = compiler.find_or_create_symbol(symbol.0, TableEntryType::Variable);
+
+	let infix = args[2..].to_owned();
+
+	let postfix = match compiler.infix_to_postfix(infix) {
+		Ok(postfix) => postfix,
+		Err(error) => {
+			return Err(error);
+		}
+	};
+
+	let mut stack: Vec<u32> = vec![];
+
+	for token in postfix {
+		match compiler.to_symbol(token.clone()) {
+			Ok(symbol) => {
+				let table_entry = compiler.find_or_create_symbol(symbol.0, symbol.1);
+
+				stack.push(table_entry.location);
+			}
+			Err(_) => {
+				// load first operand
+				compiler.add_instruction(0x20, stack.pop().unwrap());
+
+				let operation = match token.as_str() {
+					"+" => 0x30,
+					"-" => 0x31,
+					"/" => 0x32,
+					"*" => 0x33,
+					_ => unreachable!(),
+				};
+
+				// perform operation
+				compiler.add_instruction(operation, stack.pop().unwrap());
+
+				// store temporary
+				let data_counter = compiler.use_data_counter();
+				compiler.add_instruction(0x21, data_counter);
+				stack.push(data_counter);
+			}
+		}
+	}
+
+	// load and store result
+	compiler.add_instruction(0x20, stack.pop().unwrap());
+	compiler.add_instruction(0x21, table_entry.location);
 
 	Ok(())
 };
@@ -126,6 +244,8 @@ lazy_static! {
 		("INPUT".to_string(), INPUT),
 		("PRINT".to_string(), PRINT),
 		("IF".to_string(), IF),
+		("GOTO".to_string(), GOTO),
+		("LET".to_string(), LET),
 		("END".to_string(), END)
 	]);
 }

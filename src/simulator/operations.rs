@@ -1,7 +1,4 @@
-use super::{
-	simpletron::{Simpletron, State},
-	utils::{read_decimal, read_string},
-};
+use super::simpletron::{Simpletron, State};
 use crate::types::MyError;
 use lazy_static::lazy_static;
 use std::collections::HashMap;
@@ -9,7 +6,7 @@ use std::collections::HashMap;
 type Operation = fn(&mut Simpletron) -> Result<(), MyError>;
 
 const READ: Operation = |simpletron| {
-	let data = match read_decimal() {
+	let data = match simpletron.read_decimal() {
 		Ok(data) => data,
 		Err(_) => return Err(MyError::new("Invalid token")),
 	};
@@ -27,7 +24,7 @@ const WRITE: Operation = |simpletron| {
 };
 
 const READ_STR: Operation = |simpletron| {
-	let data = match read_string() {
+	let data = match simpletron.read_string() {
 		Ok(data) => data,
 		Err(_) => return Err(MyError::new("Invalid token")),
 	};
@@ -119,14 +116,14 @@ const EXPONENTIATE: Operation = |simpletron| {
 
 const BRANCH: Operation = |simpletron| {
 	// go to one instruction before because it will be incremented
-	simpletron.instruction_counter = simpletron.operand as u32 - 1;
+	simpletron.set_instruction_counter(simpletron.operand as u32 - 1);
 
 	Ok(())
 };
 
 const BRANCH_NEG: Operation = |simpletron| {
 	if simpletron.accumulator < 0 {
-		simpletron.instruction_counter = simpletron.operand as u32 - 1;
+		simpletron.set_instruction_counter(simpletron.operand as u32 - 1);
 	}
 
 	Ok(())
@@ -134,7 +131,7 @@ const BRANCH_NEG: Operation = |simpletron| {
 
 const BRANCH_ZERO: Operation = |simpletron| {
 	if simpletron.accumulator == 0 {
-		simpletron.instruction_counter = simpletron.operand as u32 - 1;
+		simpletron.set_instruction_counter(simpletron.operand as u32 - 1);
 	}
 
 	Ok(())
@@ -143,13 +140,14 @@ const BRANCH_ZERO: Operation = |simpletron| {
 const HALT: Operation = |simpletron| {
 	println!();
 	println!("*** Simpletron execution terminated ***");
-	simpletron.state = State::Halted;
+
+	simpletron.set_state(State::Halted);
 
 	Ok(())
 };
 
 const SML_DEBUG: Operation = |simpletron| {
-	simpletron.debug = !(simpletron.operand == 0);
+	simpletron.set_debug(simpletron.operand != 0);
 
 	Ok(())
 };
