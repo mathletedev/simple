@@ -1,0 +1,8 @@
+#/bin/sh
+
+echo Compilation
+./target/debug/simple com $1
+echo
+
+echo Simulation
+./target/debug/simple sim ./out.sml
