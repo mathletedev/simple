@@ -1,0 +1,7 @@
+00 REM a random equation
+10 INPUT X
+20 INPUT Y
+30 INPUT Z
+40 LET R = 2 * X + Y * ( Z - 4 )
+50 PRINT R
+60 END

@@ -199,6 +199,8 @@ const LET: Command = |compiler, args| {
 				stack.push(table_entry.location);
 			}
 			Err(_) => {
+				let second_operand = stack.pop().unwrap();
+
 				// load first operand
 				compiler.add_instruction(0x20, stack.pop().unwrap());
 
@@ -211,7 +213,7 @@ const LET: Command = |compiler, args| {
 				};
 
 				// perform operation
-				compiler.add_instruction(operation, stack.pop().unwrap());
+				compiler.add_instruction(operation, second_operand);
 
 				// store temporary
 				let data_counter = compiler.use_data_counter();
