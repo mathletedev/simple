@@ -12,12 +12,7 @@ const INPUT: Command = |compiler, args| {
 		return Err(MyError::new("INPUT command takes one argument"));
 	}
 
-	let symbol = match compiler.to_symbol(args[0].to_owned()) {
-		Ok(symbol) => symbol,
-		Err(error) => {
-			return Err(error);
-		}
-	};
+	let symbol = compiler.to_symbol(args[0].to_owned())?;
 
 	if symbol.1 == TableEntryType::Constant {
 		return Err(MyError::new("Cannot read into constant"));
@@ -35,12 +30,7 @@ const PRINT: Command = |compiler, args| {
 		return Err(MyError::new("PRINT command takes one argument"));
 	}
 
-	let symbol = match compiler.to_symbol(args[0].to_owned()) {
-		Ok(symbol) => symbol,
-		Err(error) => {
-			return Err(error);
-		}
-	};
+	let symbol = compiler.to_symbol(args[0].to_owned())?;
 
 	let table_entry = compiler.find_or_create_symbol(symbol.0, symbol.1);
 
@@ -54,24 +44,9 @@ const IF: Command = |compiler, args| {
 		return Err(MyError::new("IF...GOTO command takes 4 arguments"));
 	}
 
-	let symbol1 = match compiler.to_symbol(args[0].to_owned()) {
-		Ok(symbol) => symbol,
-		Err(error) => {
-			return Err(error);
-		}
-	};
-	let symbol2 = match compiler.to_symbol(args[2].to_owned()) {
-		Ok(symbol) => symbol,
-		Err(error) => {
-			return Err(error);
-		}
-	};
-	let symbol3 = match compiler.to_symbol(args[4].to_owned()) {
-		Ok(symbol) => symbol,
-		Err(error) => {
-			return Err(error);
-		}
-	};
+	let symbol1 = compiler.to_symbol(args[0].to_owned())?;
+	let symbol2 = compiler.to_symbol(args[2].to_owned())?;
+	let symbol3 = compiler.to_symbol(args[4].to_owned())?;
 
 	if symbol3.1 != TableEntryType::Constant {
 		return Err(MyError::new("Cannot GOTO a variable"));
@@ -136,12 +111,7 @@ const GOTO: Command = |compiler, args| {
 		return Err(MyError::new("GOTO command takes 1 argument"));
 	}
 
-	let symbol = match compiler.to_symbol(args[0].to_owned()) {
-		Ok(symbol) => symbol,
-		Err(error) => {
-			return Err(error);
-		}
-	};
+	let symbol = compiler.to_symbol(args[0].to_owned())?;
 
 	if symbol.1 != TableEntryType::Constant {
 		return Err(MyError::new("Cannot GOTO a variable"));
@@ -171,12 +141,7 @@ const LET: Command = |compiler, args| {
 	}
 
 	// left-hand variable
-	let symbol = match compiler.to_symbol(args[0].to_owned()) {
-		Ok(symbol) => symbol,
-		Err(error) => {
-			return Err(error);
-		}
-	};
+	let symbol = compiler.to_symbol(args[0].to_owned())?;
 
 	let table_entry = compiler.find_or_create_symbol(symbol.0, TableEntryType::Variable);
 
