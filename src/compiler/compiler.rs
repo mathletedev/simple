@@ -230,8 +230,7 @@ impl Compiler {
 	}
 
 	pub fn to_symbol(&self, token: String) -> Result<(i32, TableEntryType), MyError> {
-		// check if variableLET A = 10
-		// 30 PRINT A
+		// check if variable
 		if token.len() != 1 || !token.chars().nth(0).unwrap().is_alphabetic() {
 			// check if constant
 			match token.parse::<i32>() {
