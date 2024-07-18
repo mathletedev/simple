@@ -1,4 +1,4 @@
-use super::{compiler::Compiler, table_entry::TableEntryType};
+use super::{table_entry::TableEntryType, Compiler};
 use crate::types::MyError;
 use lazy_static::lazy_static;
 use std::collections::HashMap;
@@ -196,7 +196,7 @@ const LET: Command = |compiler, args| {
 };
 
 const END: Command = |compiler, args| {
-    if args.len() != 0 {
+    if !args.is_empty() {
         return Err(MyError::new("PRINT command takes no arguments"));
     }
 

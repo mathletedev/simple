@@ -4,8 +4,8 @@ pub mod simulator;
 pub mod types;
 
 use clap::{Parser, Subcommand};
-use compiler::compiler::Compiler;
-use simulator::simpletron::Simpletron;
+use compiler::Compiler;
+use simulator::Simulator;
 use std::path::PathBuf;
 
 /// Simple compiler and simulator
@@ -44,7 +44,7 @@ fn main() {
             );
         }
         Commands::Sim { path } => {
-            let mut simpletron = Simpletron::new();
+            let mut simpletron = Simulator::new();
 
             if simpletron.load(path.to_path_buf()).is_err() {
                 return;
