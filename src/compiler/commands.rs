@@ -1,21 +1,21 @@
 use super::{table_entry::TableEntryType, Compiler};
-use crate::types::MyError;
+use anyhow::{bail, Result};
 use lazy_static::lazy_static;
 use std::collections::HashMap;
 
-type Command = fn(&mut Compiler, &[String]) -> Result<(), MyError>;
+type Command = fn(&mut Compiler, &[String]) -> Result<()>;
 
 const REM: Command = |_, _| Ok(());
 
 const INPUT: Command = |compiler, args| {
     if args.len() != 1 {
-        return Err(MyError::new("INPUT command takes one argument"));
+        bail!("INPUT command takes one argument");
     }
 
     let symbol = compiler.to_symbol(args[0].to_owned())?;
 
     if symbol.1 == TableEntryType::Constant {
-        return Err(MyError::new("Cannot read into constant"));
+        bail!("Cannot read into constant");
     }
 
     let table_entry = compiler.find_or_create_symbol(symbol.0, TableEntryType::Variable);
@@ -27,7 +27,7 @@ const INPUT: Command = |compiler, args| {
 
 const PRINT: Command = |compiler, args| {
     if args.len() != 1 {
-        return Err(MyError::new("PRINT command takes one argument"));
+        bail!("PRINT command takes one argument");
     }
 
     let symbol = compiler.to_symbol(args[0].to_owned())?;
@@ -41,7 +41,7 @@ const PRINT: Command = |compiler, args| {
 
 const IF: Command = |compiler, args| {
     if args.len() != 5 {
-        return Err(MyError::new("IF...GOTO command takes 4 arguments"));
+        bail!("IF...GOTO command takes 4 arguments");
     }
 
     let symbol1 = compiler.to_symbol(args[0].to_owned())?;
@@ -49,7 +49,7 @@ const IF: Command = |compiler, args| {
     let symbol3 = compiler.to_symbol(args[4].to_owned())?;
 
     if symbol3.1 != TableEntryType::Constant {
-        return Err(MyError::new("Cannot GOTO a variable"));
+        bail!("Cannot GOTO a variable");
     }
 
     let table_entry1 = compiler.find_or_create_symbol(symbol1.0, symbol1.1);
@@ -93,7 +93,7 @@ const IF: Command = |compiler, args| {
             compiler.add_instruction(0x42, goto_pos);
         }
         _ => {
-            return Err(MyError::new("Invalid comparison operator"));
+            bail!("Invalid comparison operator");
         }
     }
 
@@ -108,13 +108,13 @@ const IF: Command = |compiler, args| {
 
 const GOTO: Command = |compiler, args| {
     if args.len() != 1 {
-        return Err(MyError::new("GOTO command takes 1 argument"));
+        bail!("GOTO command takes 1 argument");
     }
 
     let symbol = compiler.to_symbol(args[0].to_owned())?;
 
     if symbol.1 != TableEntryType::Constant {
-        return Err(MyError::new("Cannot GOTO a variable"));
+        bail!("Cannot GOTO a variable");
     }
 
     let mut needs_flag = false;
@@ -137,7 +137,7 @@ const GOTO: Command = |compiler, args| {
 
 const LET: Command = |compiler, args| {
     if args.len() < 3 {
-        return Err(MyError::new("Failed to parse LET command"));
+        bail!("Failed to parse LET command");
     }
 
     // left-hand variable
@@ -197,7 +197,7 @@ const LET: Command = |compiler, args| {
 
 const END: Command = |compiler, args| {
     if !args.is_empty() {
-        return Err(MyError::new("PRINT command takes no arguments"));
+        bail!("PRINT command takes no arguments");
     }
 
     compiler.add_instruction(0x43, 0);

@@ -2,10 +2,8 @@ mod commands;
 mod symbol_table;
 mod table_entry;
 
-use crate::{
-    config::{INSTRUCTIONS_SEP, MEMORY},
-    types::MyError,
-};
+use crate::config::{INSTRUCTIONS_SEP, MEMORY};
+use anyhow::{bail, Result};
 use commands::COMMAND_TABLE;
 use std::{
     collections::HashMap,
@@ -100,7 +98,7 @@ impl Compiler {
                 Some(command) => match command(self, &tokens[2..]) {
                     Ok(()) => {}
                     Err(error) => {
-                        println!("*** Syntax error on line {}: {} ***", i + 1, error.details);
+                        println!("*** Syntax error on line {}: {} ***", i + 1, error);
                         return;
                     }
                 },
@@ -142,7 +140,7 @@ impl Compiler {
         match self.write(out_path) {
             Ok(()) => {}
             Err(error) => {
-                println!("*** {} ***", error.details);
+                println!("*** {} ***", error);
             }
         }
 
@@ -195,7 +193,7 @@ impl Compiler {
     }
 
     // write finished instructions to output file
-    fn write(&self, out_path: PathBuf) -> Result<(), MyError> {
+    fn write(&self, out_path: PathBuf) -> Result<()> {
         let file = match OpenOptions::new()
             .write(true)
             .create(true)
@@ -204,13 +202,10 @@ impl Compiler {
         {
             Ok(file) => file,
             Err(_) => {
-                return Err(MyError::new(
-                    format!(
-                        "Failed to open file {} for writing",
-                        &out_path.to_string_lossy()
-                    )
-                    .as_str(),
-                ));
+                bail!(
+                    "Failed to open file {} for writing",
+                    &out_path.to_string_lossy()
+                );
             }
         };
 
@@ -225,17 +220,17 @@ impl Compiler {
                 .as_bytes(),
         ) {
             Ok(()) => Ok(()),
-            Err(_) => Err(MyError::new("Failed to write to file")),
+            Err(_) => bail!("Failed to write to file"),
         }
     }
 
-    pub fn to_symbol(&self, token: String) -> Result<(i32, TableEntryType), MyError> {
+    pub fn to_symbol(&self, token: String) -> Result<(i32, TableEntryType)> {
         // check if variable
         if token.len() != 1 || !token.chars().nth(0).unwrap().is_alphabetic() {
             // check if constant
             match token.parse::<i32>() {
                 Ok(number) => Ok((number, TableEntryType::Constant)),
-                Err(_) => Err(MyError::new("Invalid symbol")),
+                Err(_) => bail!("Invalid symbol"),
             }
         } else {
             Ok((
@@ -245,7 +240,7 @@ impl Compiler {
         }
     }
 
-    pub fn infix_to_postfix(&self, infix: Vec<String>) -> Result<Vec<String>, MyError> {
+    pub fn infix_to_postfix(&self, infix: Vec<String>) -> Result<Vec<String>> {
         // infix to postfix: https://www.geeksforgeeks.org/convert-infix-expression-to-postfix-expression/
         let mut postfix: Vec<String> = vec![];
         let mut stack: Vec<String> = vec![];
@@ -262,7 +257,7 @@ impl Compiler {
                         let last = match stack.last() {
                             Some(last) => last,
                             None => {
-                                return Err(MyError::new("Mismatched brackets"));
+                                bail!("Mismatched brackets");
                             }
                         };
                         if last == "(" {
@@ -289,7 +284,7 @@ impl Compiler {
                         stack.push(token);
                     }
                     _ => {
-                        return Err(MyError::new(format!("Unexpected token {}", token).as_str()));
+                        bail!("Unexpected token {}", token);
                     }
                 },
             }

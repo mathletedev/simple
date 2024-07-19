@@ -1,9 +1,7 @@
 mod operations;
 
-use crate::{
-    config::{INSTRUCTIONS_RADIX, INSTRUCTIONS_SEP, MEMORY},
-    types::MyError,
-};
+use crate::config::{INSTRUCTIONS_RADIX, INSTRUCTIONS_SEP, MEMORY};
+use anyhow::{bail, Result};
 use operations::OPERATION_TABLE;
 use std::{
     fs::File,
@@ -59,12 +57,12 @@ impl Simulator {
     }
 
     // load program from file
-    pub fn load(&mut self, path: PathBuf) -> Result<(), MyError> {
+    pub fn load(&mut self, path: PathBuf) -> Result<()> {
         let file = match File::open(&path) {
             Ok(file) => file,
             Err(_) => {
                 println!("*** Failed to open file {} ***", &path.to_string_lossy());
-                return Err(MyError::new("Failed to open file"));
+                bail!("Failed to open file");
             }
         };
 
@@ -82,7 +80,7 @@ impl Simulator {
     }
 
     // load program from command-line input
-    pub fn input(&mut self) -> Result<(), MyError> {
+    pub fn input(&mut self) -> Result<()> {
         println!("*** Please enter your program one instruction ***");
         println!("*** (or data word) at a time. I will type the ***");
         println!("*** location number and a question mark (?). ***");
@@ -99,7 +97,7 @@ impl Simulator {
                 Ok(data) => data,
                 Err(_) => {
                     println!("*** Invalid token ***");
-                    return Err(MyError::new("Invalid token"));
+                    bail!("Invalid token");
                 }
             };
 
@@ -128,7 +126,7 @@ impl Simulator {
                 Ok(()) => {}
                 Err(error) => {
                     println!();
-                    println!("*** {} ***", error.details);
+                    println!("*** {} ***", error);
                     println!("*** Simpletron execution abnormally terminated ***");
                 }
             }
@@ -136,7 +134,7 @@ impl Simulator {
     }
 
     // executes current instruction
-    fn step(&mut self) -> Result<(), MyError> {
+    fn step(&mut self) -> Result<()> {
         self.instruction_register = self.memory[self.instruction_counter as usize];
 
         self.operation_code = (self.instruction_register / INSTRUCTIONS_SEP as i32) as u32;
@@ -206,28 +204,28 @@ impl Simulator {
         }
     }
 
-    pub fn read_instruction(&self) -> Result<i32, MyError> {
+    pub fn read_instruction(&self) -> Result<i32> {
         let mut data = String::new();
         if io::stdin().read_line(&mut data).is_err() {
-            Err(MyError::new("Failed to read line"))
+            bail!("Failed to read line")
         } else {
             Ok(i32::from_str_radix(data.trim(), INSTRUCTIONS_RADIX).expect("Invalid input"))
         }
     }
 
-    pub fn read_decimal(&self) -> Result<i32, MyError> {
+    pub fn read_decimal(&self) -> Result<i32> {
         let mut data = String::new();
         if io::stdin().read_line(&mut data).is_err() {
-            Err(MyError::new("Failed to read line"))
+            bail!("Failed to read line")
         } else {
             Ok(data.trim().parse::<i32>().expect("Invalid input"))
         }
     }
 
-    pub fn read_string(&self) -> Result<String, MyError> {
+    pub fn read_string(&self) -> Result<String> {
         let mut data = String::new();
         if io::stdin().read_line(&mut data).is_err() {
-            Err(MyError::new("Failed to read line"))
+            bail!("Failed to read line")
         } else {
             Ok(data)
         }

@@ -1,7 +1,6 @@
 pub mod compiler;
 pub mod config;
 pub mod simulator;
-pub mod types;
 
 use clap::{Parser, Subcommand};
 use compiler::Compiler;

@@ -1,14 +1,14 @@
 use super::{Simulator, State};
-use crate::types::MyError;
+use anyhow::{bail, Result};
 use lazy_static::lazy_static;
 use std::collections::HashMap;
 
-type Operation = fn(&mut Simulator) -> Result<(), MyError>;
+type Operation = fn(&mut Simulator) -> Result<()>;
 
 const READ: Operation = |simulator| {
     let data = match simulator.read_decimal() {
         Ok(data) => data,
-        Err(_) => return Err(MyError::new("Invalid token")),
+        Err(_) => bail!("Invalid token"),
     };
 
     simulator.memory[simulator.operand as usize] = data;
@@ -26,7 +26,7 @@ const WRITE: Operation = |simulator| {
 const READ_STR: Operation = |simulator| {
     let data = match simulator.read_string() {
         Ok(data) => data,
-        Err(_) => return Err(MyError::new("Invalid token")),
+        Err(_) => bail!("Invalid token"),
     };
 
     // first address = length of string
@@ -79,7 +79,7 @@ const SUBTRACT: Operation = |simulator| {
 
 const DIVIDE: Operation = |simulator| {
     if simulator.memory[simulator.operand as usize] == 0 {
-        return Err(MyError::new("Attempt to divide by zero"));
+        bail!("Attempt to divide by zero");
     }
 
     simulator.accumulator /= simulator.memory[simulator.operand as usize];
@@ -95,7 +95,7 @@ const MULTIPLY: Operation = |simulator| {
 
 const MODULUS: Operation = |simulator| {
     if simulator.memory[simulator.operand as usize] == 0 {
-        return Err(MyError::new("Attempt to modulo by zero"));
+        bail!("Attempt to modulo by zero");
     }
 
     simulator.accumulator %= simulator.memory[simulator.operand as usize];
