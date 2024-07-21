@@ -208,27 +208,27 @@ impl Simulator {
         let mut data = String::new();
         if io::stdin().read_line(&mut data).is_err() {
             bail!("Failed to read line")
-        } else {
-            Ok(i32::from_str_radix(data.trim(), INSTRUCTIONS_RADIX).expect("Invalid input"))
         }
+
+        Ok(i32::from_str_radix(data.trim(), INSTRUCTIONS_RADIX).expect("Invalid input"))
     }
 
     pub fn read_decimal(&self) -> Result<i32> {
         let mut data = String::new();
         if io::stdin().read_line(&mut data).is_err() {
             bail!("Failed to read line")
-        } else {
-            Ok(data.trim().parse::<i32>().expect("Invalid input"))
         }
+
+        Ok(data.trim().parse::<i32>().expect("Invalid input"))
     }
 
     pub fn read_string(&self) -> Result<String> {
         let mut data = String::new();
         if io::stdin().read_line(&mut data).is_err() {
             bail!("Failed to read line")
-        } else {
-            Ok(data)
         }
+
+        Ok(data)
     }
 
     pub fn sign(&self, x: i32) -> char {
