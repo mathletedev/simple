@@ -244,6 +244,11 @@ impl Compiler {
         // infix to postfix: https://www.geeksforgeeks.org/convert-infix-expression-to-postfix-expression/
         let mut postfix: Vec<String> = vec![];
         let mut stack: Vec<String> = vec![];
+
+        // operator precedence table
+        let precedence: HashMap<&str, u8> =
+            HashMap::from([("(", 0), ("+", 1), ("-", 1), ("/", 2), ("*", 2)]);
+
         for token in infix {
             match self.to_symbol(token.clone()) {
                 Ok(_) => {
@@ -269,10 +274,6 @@ impl Compiler {
                         postfix.push(stack.pop().unwrap());
                     },
                     "+" | "-" | "/" | "*" => {
-                        // operator precedence table
-                        let precedence: HashMap<&str, u8> =
-                            HashMap::from([("(", 0), ("+", 1), ("-", 1), ("/", 2), ("*", 2)]);
-
                         // pop all operators with higher precedence
                         while !stack.is_empty()
                             && precedence.get(stack.last().unwrap().as_str())

@@ -14,12 +14,11 @@ impl SymbolTable {
     }
 
     pub fn find(&self, symbol: i32, entry_type: TableEntryType) -> Option<TableEntry> {
-        for table_entry in &self.data {
-            if table_entry.symbol == symbol && table_entry.entry_type == entry_type {
-                return Some(table_entry.clone());
-            }
-        }
-
-        None
+        self.data
+            .iter()
+            .find(|table_entry| {
+                table_entry.symbol == symbol && table_entry.entry_type == entry_type
+            })
+            .cloned()
     }
 }
