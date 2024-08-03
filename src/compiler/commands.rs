@@ -149,9 +149,7 @@ const LET: Command = |compiler, args| {
 
     let postfix = match compiler.infix_to_postfix(infix) {
         Ok(postfix) => postfix,
-        Err(error) => {
-            return Err(error);
-        }
+        Err(error) => bail!(error),
     };
 
     let mut stack: Vec<u32> = vec![];
